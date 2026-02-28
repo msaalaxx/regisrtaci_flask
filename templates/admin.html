@@ -1,0 +1,169 @@
+<{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-people"></i> Управление пользователями</h4>
+                <span class="badge bg-light text-dark">Всего: {{ users.total }}</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя пользователя</th>
+                                <th>Email</th>
+                                <th>Роль</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users.items %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>
+                                    <i class="bi bi-person-circle"></i>
+                                    {{ user.username }}
+                                    {% if user.id == current_user.id %}
+                                        <span class="badge bg-info">Это вы</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if user.is_admin %}
+                                        <span class="badge bg-success">Администратор</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Пользователь</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        {% if not user.is_admin and user.id != current_user.id %}
+                                            <a href="{{ url_for('routes_app.make_admin', user_id=user.id) }}"
+                                               class="btn btn-outline-success"
+                                               title="Назначить администратором">
+                                                <i class="bi bi-person-plus"></i>
+                                            </a>
+                                        {% elif user.is_admin and user.id != current_user.id %}
+                                            <a href="{{ url_for('routes_app.remove_admin', user_id=user.id) }}"
+                                               class="btn btn-outline-warning"
+                                               title="Снять права администратора"
+                                               onclick="return confirm('Снять права администратора с {{ user.username }}?')">
+                                                <i class="bi bi-person-dash"></i>
+                                            </a>
+                                        {% endif %}
+
+                                        {% if user.id != current_user.id %}
+                                            <a href="#"
+                                               class="btn btn-outline-danger"
+                                               title="Удалить пользователя"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#deleteModal{{ user.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Модальное окно подтверждения удаления -->
+                                    <div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                        Подтверждение удаления
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Вы уверены, что хотите удалить пользователя <strong>{{ user.username }}</strong>?</p>
+                                                    <p class="text-danger">Это действие нельзя отменить!</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        <i class="bi bi-x-circle"></i> Отмена
+                                                    </button>
+                                                    <a href="{{ url_for('routes_app.delete_user', user_id=user.id) }}"
+                                                       class="btn btn-danger">
+                                                        <i class="bi bi-trash"></i> Удалить
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Пагинация -->
+                {% if users.pages > 1 %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if users.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('routes_app.admin', page=users.prev_num) }}">
+                                    <i class="bi bi-chevron-left"></i> Назад
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-left"></i> Назад</span>
+                            </li>
+                        {% endif %}
+
+                        {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == users.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('routes_app.admin', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if users.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('routes_app.admin', page=users.next_num) }}">
+                                    Вперед <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Вперед <i class="bi bi-chevron-right"></i></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Автоматическое скрытие alert сообщений через 5 секунд
+    setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            let bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+</script>
+{% endblock %}
