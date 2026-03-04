@@ -22,7 +22,6 @@ def register():
         )
         user.set_password(form.password.data)
 
-        # Первый пользователь становится админом
         if User.query.count() == 0:
             user.is_admin = True
             flash('Первый пользователь создан как администратор!', 'success')
@@ -66,7 +65,7 @@ def profile():
         flash('Профиль обновлён!', 'success')
         return redirect(url_for('routes_app.profile'))
 
-    # Заполняем форму текущими данными
+
     if request.method == 'GET':
         form.username.data = current_user.username
         form.email.data = current_user.email
@@ -88,16 +87,12 @@ def logout():
 @login_required
 def admin():
     if not current_user.is_admin:
-        abort(403)  # Доступ запрещен
-
+        abort(403)  
     page = request.args.get('page', 1, type=int)
-    per_page = 5  # Количество пользователей на странице
-
-    # Пагинация
+    per_page = 5  
     users = User.query.paginate(page=page, per_page=per_page, error_out=False)
 
     return render_template('admin.html', users=users)
-
 
 # Назначить администратора
 @routes_app.route('/admin/make_admin/<int:user_id>')
@@ -126,7 +121,6 @@ def remove_admin(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    # Нельзя снять права с самого себя
     if user.id == current_user.id:
         flash('Вы не можете снять права администратора с самого себя!', 'danger')
         return redirect(url_for('routes_app.admin'))
@@ -150,7 +144,6 @@ def delete_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    # Нельзя удалить самого себя
     if user.id == current_user.id:
         flash('Вы не можете удалить самого себя!', 'danger')
         return redirect(url_for('routes_app.admin'))
